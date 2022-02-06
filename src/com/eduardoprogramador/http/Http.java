@@ -1,3 +1,5 @@
+package com.eduardoprogramador.http;
+
 /*
 *   Copyright 2022. Eduardo Programador
 *   www.eduardoprogramador.com
