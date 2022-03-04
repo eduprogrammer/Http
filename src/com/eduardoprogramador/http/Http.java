@@ -178,6 +178,137 @@ public class Http {
     }
 
     /*
+     *   Makes an HTTP POST request and fires the interface to work with the lines,
+     *   which contains the server response.
+     *
+     *   Parameters:
+     *
+     *   host: the host part of the URL. Eg.: eduardoprogramador.com
+     * isHttps: true for HTTPS connections, false otherwise
+     *   port: The address port of the server
+     *   path: The path inside the host containing the file to access. Eg.: /img/logo.png
+     *   parameters: An arraylist of arraylists that holds string arrays of params.
+     *       Eg.: ArrayList<ArrayList> params = new ArrayList<>();
+     *           ArrayList<String> par = new ArrayList<>();
+     *           par.add("key");
+     *           par.add("value");
+     *           params.add(par);
+     *
+     *   headers: same type of parameters, but it holds the headers.
+     *   onHttpListenner: the interface that has the Htto lines as parameters
+     *
+     * */
+    public void post(String host, boolean isHttps, int port, String path, ArrayList<ArrayList> parameters, ArrayList<ArrayList> headers, OnHttpListenner onHttpListenner) {
+
+        URL url;
+        StringBuilder stringBuilder;
+        OutputStream outputStream;
+        BufferedReader bufferedReader;
+        String line;
+        byte[] out;
+        if (isHttps) {
+            try {
+                url = new URL("https", host, port, path);
+                HttpsURLConnection httpsURLConnection = (HttpsURLConnection)url.openConnection();
+                httpsURLConnection.setRequestMethod("POST");
+                httpsURLConnection.setDoOutput(true);
+
+                if(headers != null) {
+
+                    for (int i = 0; i < headers.size(); i++) {
+                        ArrayList<String> header = headers.get(i);
+                        httpsURLConnection.addRequestProperty(header.get(0), header.get(1));
+                    }
+                }
+
+                stringBuilder = new StringBuilder();
+
+                for (int j = 0; j < parameters.size(); j++) {
+                    ArrayList<String> param = parameters.get(j);
+                    stringBuilder.append(URLEncoder.encode(param.get(0),"UTF-8") + "=" + URLEncoder.encode(param.get(1),"UTF-8"));
+                    if((j+1) < parameters.size()) {
+                        stringBuilder.append("&");
+                    }
+                }
+
+                out = stringBuilder.toString().getBytes(StandardCharsets.UTF_8);
+
+                httpsURLConnection.addRequestProperty("Content-Type","application/x-www-form-urlencoded");
+                httpsURLConnection.addRequestProperty("Content-Length","" + out.length);
+                httpsURLConnection.addRequestProperty("User-Agent","Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13");
+
+                httpsURLConnection.setFixedLengthStreamingMode(out.length);
+                outputStream = httpsURLConnection.getOutputStream();
+                outputStream.write(out);
+                outputStream.flush();
+                httpsURLConnection.connect();
+                bufferedReader = new BufferedReader(new InputStreamReader(httpsURLConnection.getInputStream()));
+                line = null;
+
+                while((line = bufferedReader.readLine()) != null) {
+                    onHttpListenner.onReading(line);
+                }
+
+                bufferedReader.close();
+                httpsURLConnection.disconnect();
+
+            } catch (Exception var14) {
+                var14.printStackTrace();
+            }
+        } else {
+            try {
+                url = new URL("http", host, port, path);
+                HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
+                httpURLConnection.setRequestMethod("POST");
+                httpURLConnection.setDoOutput(true);
+                stringBuilder = new StringBuilder();
+
+                for (int i = 0; i < headers.size(); i++) {
+                    ArrayList<String> header =  headers.get(i);
+                    httpURLConnection.addRequestProperty(header.get(0),header.get(1));
+                }
+
+                stringBuilder = new StringBuilder();
+
+                if(headers != null) {
+
+                    for (int j = 0; j < parameters.size(); j++) {
+                        ArrayList<String> param = parameters.get(j);
+                        stringBuilder.append(URLEncoder.encode(param.get(0), "UTF-8") + "=" + URLEncoder.encode(param.get(1), "UTF-8"));
+                        if ((j + 1) < parameters.size()) {
+                            stringBuilder.append("&");
+                        }
+                    }
+                }
+
+
+                out = stringBuilder.toString().getBytes(StandardCharsets.UTF_8);
+
+                httpURLConnection.addRequestProperty("Content-Type","application/x-www-form-urlencoded");
+                httpURLConnection.addRequestProperty("Content-Length","" + out.length);
+                httpURLConnection.addRequestProperty("User-Agent","Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13");
+
+                httpURLConnection.setFixedLengthStreamingMode(out.length);
+                outputStream = httpURLConnection.getOutputStream();
+                outputStream.write(out);
+                outputStream.flush();
+                httpURLConnection.connect();
+                bufferedReader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
+                line = null;
+
+                while((line = bufferedReader.readLine()) != null) {
+                    onHttpListenner.onReading(line);
+                }
+
+                bufferedReader.close();
+                httpURLConnection.disconnect();
+            } catch (Exception var15) {
+                var15.printStackTrace();
+            }
+        }
+    }
+
+    /*
      *   Makes an HTTP POST request,reads the bytes received
      *    and writes them into an output file,
      *
@@ -455,6 +586,127 @@ public class Http {
     }
 
     /*
+     *   Makes an HTTP GET request and returns the result as String,
+     *   which contains the server response.
+     *
+     *   Parameters:
+     *
+     *   host: the host part of the URL. Eg.: eduardoprogramador.com
+     *  isHttps: true for HTTPS connections, false otherwise
+     *   port: The address port of the server
+     *   path: The path inside the host containing the file to access. Eg.: /img/logo.png
+     *   parameters: An arraylist of arraylists that holds string arrays of params.
+     *       Eg.: ArrayList<ArrayList> params = new ArrayList<>();
+     *           ArrayList<String> par = new ArrayList<>();
+     *           par.add("key");
+     *           par.add("value");
+     *           params.add(par);
+     *
+     *   headers: same type of parameters, but it holds the headers.
+     *   onHttpListenner: An interface that has the lines of the Http response to play with.
+     *
+     * */
+    public void get(String host, boolean isHttps, int port, String path, ArrayList<ArrayList> parameters, ArrayList<ArrayList> headers, OnHttpListenner onHttpListenner) {
+
+        URL url;
+        StringBuilder stringBuilder = new StringBuilder();
+        OutputStream outputStream;
+        BufferedReader bufferedReader;
+        String line;
+        byte[] out;
+        if (isHttps) {
+            try {
+
+                if(parameters != null) {
+                    for (int j = 0; j < parameters.size(); j++) {
+                        ArrayList<String> param = parameters.get(j);
+                        stringBuilder.append(URLEncoder.encode(param.get(0), "UTF-8") + "=" + URLEncoder.encode(param.get(1), "UTF-8"));
+                        if ((j + 1) < parameters.size()) {
+                            stringBuilder.append("&");
+                        }
+                    }
+                }
+
+                String local = (parameters == null) ? path : (path + "?" + stringBuilder.toString());
+
+                url = new URL("https", host, port, local);
+                HttpsURLConnection httpsURLConnection = (HttpsURLConnection)url.openConnection();
+                httpsURLConnection.setRequestMethod("GET");
+
+                if(headers != null) {
+
+                    for (int i = 0; i < headers.size(); i++) {
+                        ArrayList<String> header = headers.get(i);
+                        httpsURLConnection.addRequestProperty(header.get(0), header.get(1));
+                    }
+                }
+
+                stringBuilder = new StringBuilder();
+
+                httpsURLConnection.addRequestProperty("User-Agent","Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13");
+
+                httpsURLConnection.connect();
+                bufferedReader = new BufferedReader(new InputStreamReader(httpsURLConnection.getInputStream()));
+                line = null;
+
+                while((line = bufferedReader.readLine()) != null) {
+                    onHttpListenner.onReading(line);
+                }
+
+                bufferedReader.close();
+                httpsURLConnection.disconnect();
+
+            } catch (Exception var14) {
+                var14.printStackTrace();
+            }
+        } else {
+            try {
+                stringBuilder = new StringBuilder();
+
+                if(parameters != null) {
+                    for (int j = 0; j < parameters.size(); j++) {
+                        ArrayList<String> param = parameters.get(j);
+                        stringBuilder.append(URLEncoder.encode(param.get(0), "UTF-8") + "=" + URLEncoder.encode(param.get(1), "UTF-8"));
+                        if ((j + 1) < parameters.size()) {
+                            stringBuilder.append("&");
+                        }
+                    }
+                }
+
+                String local = (parameters == null) ? path : (path + "?" + stringBuilder.toString());
+
+                url = new URL("http", host, port, path + "?" + local);
+                HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
+                httpURLConnection.setRequestMethod("GET");
+
+                if(headers != null) {
+                    for (int i = 0; i < headers.size(); i++) {
+                        ArrayList<String> header = headers.get(i);
+                        httpURLConnection.addRequestProperty(header.get(0), header.get(1));
+                    }
+                }
+
+                stringBuilder = new StringBuilder();
+
+                httpURLConnection.addRequestProperty("User-Agent","Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13");
+
+                httpURLConnection.connect();
+                bufferedReader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
+                line = null;
+
+                while((line = bufferedReader.readLine()) != null) {
+                    onHttpListenner.onReading(line);
+                }
+
+                bufferedReader.close();
+                httpURLConnection.disconnect();
+            } catch (Exception var15) {
+                var15.printStackTrace();
+            }
+        }
+    }
+
+    /*
     *   Downloads a file from a URL link.
     *
     *   Parameters:
@@ -589,6 +841,19 @@ public class Http {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    /*
+    * Interface that will work with the Http Lines
+    * */
+    public static interface OnHttpListenner {
+        /*
+        * Reads the Http line response in a loop.
+        *
+        * Parameters:
+        *   line: A string that contains the actual line of the server response
+        * */
+        public void onReading(String line);
     }
 
 }
