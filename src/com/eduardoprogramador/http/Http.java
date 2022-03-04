@@ -178,6 +178,157 @@ public class Http {
     }
 
     /*
+     *   Makes an HTTP POST request,reads the bytes received
+     *    and writes them into an output file,
+     *
+     *   Parameters:
+     *
+     *   host: the host part of the URL. Eg.: eduardoprogramador.com
+     *   isHttps: true for HTTPS connections, false otherwise
+     *   port: The address port of the server
+     *   path: The path inside the host containing the file to access. Eg.: /img/logo.png
+     *   parameters: An arraylist of arraylists that holds string arrays of params.
+     *       Eg.: ArrayList<ArrayList> params = new ArrayList<>();
+     *           ArrayList<String> par = new ArrayList<>();
+     *           par.add("key");
+     *           par.add("value");
+     *           params.add(par);
+     *
+     *   headers: same type of parameters, but it holds the headers.
+     *   outFile: The path of the new file that will receive the downloaded bytes.
+     *
+     * */
+    public boolean post(String host, boolean isHttps, int port, String path, ArrayList<ArrayList> parameters, ArrayList<ArrayList> headers, String outFile) {
+
+        URL url;
+        OutputStream outputStream;
+        DataInputStream dataInputStream;
+        StringBuilder stringBuilder = new StringBuilder();
+        byte[] out;
+        byte[] bytes = new byte[1];
+        int count;
+        if (isHttps) {
+            try {
+
+                File file = new File(outFile);
+                if(!file.exists())
+                    file.createNewFile();
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+
+                url = new URL("https", host, port, path);
+                HttpsURLConnection httpsURLConnection = (HttpsURLConnection)url.openConnection();
+                httpsURLConnection.setRequestMethod("POST");
+                httpsURLConnection.setDoOutput(true);
+
+                if(headers != null) {
+
+                    for (int i = 0; i < headers.size(); i++) {
+                        ArrayList<String> header = headers.get(i);
+                        httpsURLConnection.addRequestProperty(header.get(0), header.get(1));
+                    }
+                }
+
+                stringBuilder = new StringBuilder();
+
+                for (int j = 0; j < parameters.size(); j++) {
+                    ArrayList<String> param = parameters.get(j);
+                    stringBuilder.append(URLEncoder.encode(param.get(0),"UTF-8") + "=" + URLEncoder.encode(param.get(1),"UTF-8"));
+                    if((j+1) < parameters.size()) {
+                        stringBuilder.append("&");
+                    }
+                }
+
+                out = stringBuilder.toString().getBytes(StandardCharsets.UTF_8);
+
+                httpsURLConnection.addRequestProperty("Content-Type","application/x-www-form-urlencoded");
+                httpsURLConnection.addRequestProperty("Content-Length","" + out.length);
+                httpsURLConnection.addRequestProperty("User-Agent","Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13");
+
+                httpsURLConnection.setFixedLengthStreamingMode(out.length);
+                outputStream = httpsURLConnection.getOutputStream();
+                outputStream.write(out);
+                outputStream.flush();
+                httpsURLConnection.connect();
+                dataInputStream = new DataInputStream(httpsURLConnection.getInputStream());
+
+                while ((count = dataInputStream.read(bytes)) != -1) {
+                    fileOutputStream.write(bytes);
+                    fileOutputStream.flush();
+                }
+
+                fileOutputStream.close();
+                dataInputStream.close();
+                httpsURLConnection.disconnect();
+
+                return true;
+
+            } catch (Exception var14) {
+                var14.printStackTrace();
+                return false;
+            }
+        } else {
+            try {
+
+                File file = new File(outFile);
+                if(!file.exists())
+                    file.createNewFile();
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+
+                url = new URL("http", host, port, path);
+                HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
+                httpURLConnection.setRequestMethod("POST");
+                httpURLConnection.setDoOutput(true);
+                stringBuilder = new StringBuilder();
+
+                for (int i = 0; i < headers.size(); i++) {
+                    ArrayList<String> header =  headers.get(i);
+                    httpURLConnection.addRequestProperty(header.get(0),header.get(1));
+                }
+
+                stringBuilder = new StringBuilder();
+
+                if(headers != null) {
+
+                    for (int j = 0; j < parameters.size(); j++) {
+                        ArrayList<String> param = parameters.get(j);
+                        stringBuilder.append(URLEncoder.encode(param.get(0), "UTF-8") + "=" + URLEncoder.encode(param.get(1), "UTF-8"));
+                        if ((j + 1) < parameters.size()) {
+                            stringBuilder.append("&");
+                        }
+                    }
+                }
+
+
+                out = stringBuilder.toString().getBytes(StandardCharsets.UTF_8);
+
+                httpURLConnection.addRequestProperty("Content-Type","application/x-www-form-urlencoded");
+                httpURLConnection.addRequestProperty("Content-Length","" + out.length);
+                httpURLConnection.addRequestProperty("User-Agent","Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.A.B.C Safari/525.13");
+
+                httpURLConnection.setFixedLengthStreamingMode(out.length);
+                outputStream = httpURLConnection.getOutputStream();
+                outputStream.write(out);
+                outputStream.flush();
+                httpURLConnection.connect();
+                dataInputStream = new DataInputStream(httpURLConnection.getInputStream());
+
+                while ((count = dataInputStream.read(bytes)) != -1) {
+                    fileOutputStream.write(bytes);
+                    fileOutputStream.flush();
+                }
+
+                dataInputStream.close();
+                dataInputStream.close();
+                httpURLConnection.disconnect();
+                return true;
+            } catch (Exception var15) {
+                var15.printStackTrace();
+                return false;
+            }
+        }
+    }
+
+    /*
      *   Makes an HTTP GET request and returns the result as String,
      *   which contains the server response.
      *
